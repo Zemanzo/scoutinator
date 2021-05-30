@@ -1,9 +1,24 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
 const BreadCrumbsNode = styled.div`
   margin-left: 8px;
   display: flex;
+  overflow: hidden;
+  position: relative;
+
+  &::before {
+    display: ${(props: { isOverflowing: boolean}) =>
+      props.isOverflowing ? "block" : "none"};
+    pointer-events: none;
+    position: fixed;
+    left: 8px;
+    top: 0px;
+    content: " ";
+    width: 64px;
+    height: 3em;
+    background: linear-gradient(to left, transparent, #1e1e1e);
+  }
 `;
 
 const BreadCrumbSeparator = styled.div`
@@ -19,6 +34,7 @@ const BreadCrumb = styled.div`
   padding: 8px;
   margin: 8px 0;
   cursor: pointer;
+  white-space: nowrap;
 
   &:hover {
     text-decoration: underline;
@@ -41,8 +57,27 @@ const BreadCrumbs: React.FC<{
     }
   };
 
+  const [isOverflowing, setIsOverflowing] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const updateScrollAndOverflow = () => {
+    if (containerRef.current !== null) {
+      setIsOverflowing(containerRef.current.scrollWidth > containerRef.current.clientWidth);
+      containerRef.current.scrollLeft = containerRef.current.scrollWidth;
+      return;
+    }
+    setIsOverflowing(false);
+  };
+  useEffect(updateScrollAndOverflow, [breadCrumbs, setIsOverflowing]);
+
+  useEffect(() => {
+     window.addEventListener("resize", updateScrollAndOverflow);
+     return () => {
+       window.removeEventListener("resize", updateScrollAndOverflow);
+     };
+   }, []);
+
   return (
-    <BreadCrumbsNode>
+    <BreadCrumbsNode ref={containerRef} isOverflowing={isOverflowing}>
       <BreadCrumb
         onClick={() => {
           setPath();

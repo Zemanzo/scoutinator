@@ -1,5 +1,6 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
+import { BsFillFolderFill, BsFileEarmark, BsImageFill } from "react-icons/bs";
 
 const DirectoryEntryNode = styled.div`
   display: flex;
@@ -7,56 +8,79 @@ const DirectoryEntryNode = styled.div`
   cursor: pointer;
   border-radius: 2px;
   user-select: none;
+  padding: ${(props: { type: string; thicc: boolean }) => props.thicc ? "4px" : ""} 0;
 
   &:hover span {
     text-decoration: underline;
   }
 
-  background-color: ${(props: { type: string }) => {
+  ${(props: { type: string; thicc: boolean }) => {
     switch (props.type) {
       case "folder":
-        return "#9ff1";
+        return css`
+          background-color: #44aaff16;
+        `;
+      case "image":
+        return css`
+          background-color: #99ff9909;
+        `;
       case "file":
       default:
-        return "initial";
+        return "";
     }
   }};
 `;
 
-const EntryIcon = styled.div`
+const iconCss = css`
+  transform: scale(0.8);
+  margin-left: 4px;
   margin-right: 8px;
-  margin-top: .4em;
-  width: 0.8em;
-  height: 0.4em;
   border-radius: 2px;
-
-  background-color: ${(props: { type: string }) => {
-    switch (props.type) {
-      case "folder":
-        return "#9ff";
-      case "file":
-      default:
-        return "#ccc";
-    }
-  }};
+  flex-shrink: 0;
 `;
+
+const FolderIcon = styled(BsFillFolderFill)`
+  ${iconCss}
+  color: #9ff;
+`;
+
+const FileIcon = styled(BsFileEarmark)`
+  ${iconCss}
+`;
+
+const ImageIcon = styled(BsImageFill)`
+  ${iconCss}
+  color: #9f9;
+`;
+
+const hasImageExtension = (name: string) => {
+  return [".jpg", ".jpeg", ".png", ".gif", "webp"].some(ext => name.endsWith(ext));
+}
 
 const DirectoryEntry: React.FC<{
   name: string;
   type: string;
   currentPath: string;
   setCurrentPath: Function;
-}> = ({ name, type, currentPath, setCurrentPath, ...props }) => {
+  thicc: boolean;
+}> = ({ name, type, currentPath, setCurrentPath, thicc }) => {
+  if (type === "file" && hasImageExtension(name)) {
+    type = "image";
+  };
+
   return (
     <DirectoryEntryNode
       type={type}
+      thicc={thicc}
       onClick={() => {
         if (type === "folder") {
           setCurrentPath(currentPath + name + "/");
         }
       }}
     >
-      <EntryIcon type={type}>&nbsp;</EntryIcon>
+      {type === "folder" && <FolderIcon />}
+      {type === "file" && <FileIcon />}
+      {type === "image" && <ImageIcon />}
       <span>{name}</span>
     </DirectoryEntryNode>
   );
