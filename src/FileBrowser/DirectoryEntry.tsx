@@ -53,21 +53,13 @@ const ImageIcon = styled(BsImageFill)`
   color: #9f9;
 `;
 
-const hasImageExtension = (name: string) => {
-  return [".jpg", ".jpeg", ".png", ".gif", "webp"].some(ext => name.endsWith(ext));
-}
-
 const DirectoryEntry: React.FC<{
   name: string;
   type: string;
   currentPath: string;
-  setCurrentPath: Function;
+  setCurrentPath: React.Dispatch<React.SetStateAction<string>>;
   thicc: boolean;
 }> = ({ name, type, currentPath, setCurrentPath, thicc }) => {
-  if (type === "file" && hasImageExtension(name)) {
-    type = "image";
-  };
-
   return (
     <DirectoryEntryNode
       type={type}

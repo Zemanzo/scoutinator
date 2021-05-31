@@ -8,10 +8,10 @@ import {
 } from "react-icons/bs";
 import DirectoryEntry from "./DirectoryEntry";
 import BreadCrumbs from "./BreadCrumbs/BreadCrumbs";
-import RestUtil from "./RestUtil";
-import "./App.css";
+import RestUtil from "../RestUtil";
+import { VIEWS } from "../enum";
 
-const AppRoot = styled.div`
+const FileBrowserRoot = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -57,11 +57,15 @@ type DirectoryContents = {
 }
 
 
-function App() {
-  const [currentPath, setCurrentPath] = useState<string>("/");
+const FileBrowser: React.FC<{
+  setCurrentView: React.Dispatch<React.SetStateAction<string>>;
+  currentPath: string;
+  setCurrentPath: React.Dispatch<React.SetStateAction<string>>;
+}> = ({ setCurrentView, currentPath, setCurrentPath }) => {
   const [hasErrored, setHasErrored] = useState<boolean>(false);
-  const [directoryContents, setDirectoryContents] =
-    useState<DirectoryContents[]>([]);
+  const [directoryContents, setDirectoryContents] = useState<
+    DirectoryContents[]
+  >([]);
   const [extraSpacing, setExtraSpacing] = useState<boolean>(false);
 
   useEffect(() => {
@@ -76,9 +80,8 @@ function App() {
     });
   }, [currentPath]);
 
-
   return (
-    <AppRoot>
+    <FileBrowserRoot>
       <HeaderNode>
         <BreadCrumbs
           currentPath={currentPath}
@@ -114,12 +117,14 @@ function App() {
         <button>
           <BsSearch />
         </button>
-        <button>
+        <button onClick={() => {
+          setCurrentView(VIEWS.CAROUSEL);
+        }}>
           <BsImageFill />
         </button>
       </FooterNode>
-    </AppRoot>
+    </FileBrowserRoot>
   );
-}
+};
 
-export default App;
+export default FileBrowser;

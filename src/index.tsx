@@ -1,11 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
-import App from "./App";
+import Views from "./Views";
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <Views />
   </React.StrictMode>,
   document.getElementById("root")
 );
