@@ -10,6 +10,7 @@ import DirectoryEntry from "./DirectoryEntry";
 import BreadCrumbs from "./BreadCrumbs/BreadCrumbs";
 import RestUtil from "../RestUtil";
 import { VIEWS } from "../enum";
+import { DirectoryContents } from "../scoutinator";
 
 const FileBrowserRoot = styled.div`
   display: flex;
@@ -51,21 +52,22 @@ const FooterNode = styled.footer`
   }
 `;
 
-type DirectoryContents = {
-  type: string,
-  name: string
-}
-
-
 const FileBrowser: React.FC<{
   setCurrentView: React.Dispatch<React.SetStateAction<string>>;
   currentPath: string;
   setCurrentPath: React.Dispatch<React.SetStateAction<string>>;
-}> = ({ setCurrentView, currentPath, setCurrentPath }) => {
+  directoryContents: DirectoryContents[];
+  setDirectoryContents: React.Dispatch<
+    React.SetStateAction<DirectoryContents[]>
+  >;
+}> = ({
+  setCurrentView,
+  currentPath,
+  setCurrentPath,
+  directoryContents,
+  setDirectoryContents,
+}) => {
   const [hasErrored, setHasErrored] = useState<boolean>(false);
-  const [directoryContents, setDirectoryContents] = useState<
-    DirectoryContents[]
-  >([]);
   const [extraSpacing, setExtraSpacing] = useState<boolean>(false);
 
   useEffect(() => {
@@ -117,9 +119,11 @@ const FileBrowser: React.FC<{
         <button>
           <BsSearch />
         </button>
-        <button onClick={() => {
-          setCurrentView(VIEWS.CAROUSEL);
-        }}>
+        <button
+          onClick={() => {
+            setCurrentView(VIEWS.CAROUSEL);
+          }}
+        >
           <BsImageFill />
         </button>
       </FooterNode>

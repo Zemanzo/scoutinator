@@ -1,3 +1,13 @@
+@font-face {
+  font-family: "Sawarabi Gothic";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Sawarabi Gothic"),
+    local("Sawarabi Gothic Regular"),
+    local("SawarabiGothic-Regular"),
+    url("./fonts/Sawarabi_Gothic/SawarabiGothic-Regular.ttf") format("ttf");
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -15,9 +25,4 @@ body {
 
 #root {
   height: 100%;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
 }

@@ -79,22 +79,23 @@ const BreadCrumbs: React.FC<{
   return (
     <BreadCrumbsNode ref={containerRef} isOverflowing={isOverflowing}>
       <BreadCrumb
+        key="rootCrumb"
         onClick={() => {
           setPath();
         }}
       >
         root
       </BreadCrumb>
-      <BreadCrumbSeparator>/</BreadCrumbSeparator>
+      <BreadCrumbSeparator key="rootSeparator">/</BreadCrumbSeparator>
       {breadCrumbs.map((crumb, index) => (
         <>
           {index !== 0 && (
-            <BreadCrumbSeparator key={"separator" + index}>
+            <BreadCrumbSeparator key={"separator" + crumb + index}>
               /
             </BreadCrumbSeparator>
           )}
           <BreadCrumb
-            key={index}
+            key={crumb + index}
             onClick={() => {
               setPath(breadCrumbs.slice(0, index + 1).join("/") + "/");
             }}

@@ -7,6 +7,8 @@ class RestUtil {
     return fetch(path, options).then((response) => {
       if (response.headers.get("Content-Type")?.includes("application/json")) {
         return response.json();
+      } else if (response.headers.get("Content-Type")?.includes("application/octet-stream")) {
+        return response.blob();
       } else if (response) {
         return response.text();
       }
@@ -25,8 +27,20 @@ class RestUtil {
     try {
       return await this.doApiRequest("/directory", {
         qs: new URLSearchParams({
-          path
-        })
+          path: encodeURIComponent(path),
+        }),
+      });
+    } catch (err) {
+      return { error: err };
+    }
+  }
+
+  async getImage(path: string) {
+    try {
+      return await this.doApiRequest("/image", {
+        qs: new URLSearchParams({
+          path: encodeURIComponent(path),
+        }),
       });
     } catch (err) {
       return { error: err };
