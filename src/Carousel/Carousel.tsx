@@ -82,6 +82,40 @@ const CarouselFooter = styled.footer`
   }
 `;
 
+const FooterInput = styled.input`
+  background-color: ${(props: { hasError: boolean }) =>
+    props.hasError ? "#f002" : "transparent"};
+  appearance: textfield;
+  border: none;
+  border-bottom: 2px solid #fff2;
+  margin: 0.7em 0.2em;
+  background-color: transparent;
+  color: #ccc;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 1.3em;
+  text-align: center;
+  padding: 0.5em;
+  max-width: 3ch;
+
+  :focus {
+    outline: none;
+    border-bottom: 2px solid
+      ${(props: { hasError: boolean }) => (props.hasError ? "#f005" : "#fff5")};
+    background-color: ${(props: { hasError: boolean }) =>
+      props.hasError ? "#f002" : "#fff2"};
+  }
+`;
+
+const TotalDisplay = styled.span`
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 1.3em;
+  text-align: center;
+  margin: 0.7em 0;
+  padding: 0.5em;
+`;
+
 const Overlay = styled.div`
   position: absolute;
   left: 0px;
@@ -125,20 +159,62 @@ const Carousel: React.FC<{
   currentPath: string;
   setCurrentPath: React.Dispatch<React.SetStateAction<string>>;
   directoryContents: DirectoryContents[];
-  setDirectoryContents: React.Dispatch<
-    React.SetStateAction<DirectoryContents[]>
-  >;
-}> = ({ setCurrentView, currentPath, setCurrentPath, directoryContents, setDirectoryContents}) => {
+}> = ({ setCurrentView, currentPath, setCurrentPath, directoryContents}) => {
+  const directoryImages = directoryContents.filter(file => file.type === "image");
   const [controlsVisible, setControlsVisible] = useState<boolean>(true);
   const [imageData, setImageData] = useState<string>("");
+  const [currentFile, setCurrentFile] = useState<number | "">(1);
+  const [inputError, setInputError] = useState<boolean>(false);
 
   useEffect(() => {
-    const firstImage = currentPath + directoryContents[0].name;
-    RestUtil.getImage(firstImage).then((data) => {
-      setImageData(URL.createObjectURL(data));
-    });
-  }, [currentPath, directoryContents, setImageData]);
+    // TODO: Add debounce, for when typing in the input.
+    if (typeof currentFile === "number") {
+      const firstImage = currentPath + directoryImages[currentFile - 1].name;
+      setImageData(RestUtil.getImageUrl(firstImage));
+    }
+  }, [currentFile, currentPath, directoryImages, setImageData]);
 
+  const onBlurFooterInput = () => {
+    setInputError(false);
+  };
+
+  const onInputFooterInput = (
+    event: React.FormEvent<HTMLInputElement>
+  ) => {
+    const nativeEvent = (event.nativeEvent as InputEvent);
+    const noDigitsRegularExpression = /\D/g;
+    if (noDigitsRegularExpression.test(nativeEvent.data || "")) {
+      event.currentTarget.value = String(currentFile);
+    }
+  };
+
+  const onChangeFooterInput = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (event.target.value === "") {
+      setInputError(false);
+      setCurrentFile("");
+      return;
+    }
+    const numberValue = parseInt(event.target.value);
+    if (
+      isNaN(numberValue) ||
+      numberValue < 1 ||
+      numberValue > directoryImages.length
+    ) {
+      setInputError(true);
+      console.error(numberValue);
+      return;
+    }
+
+    setInputError(false);
+    setCurrentFile(numberValue);
+  };
+
+  const name =
+    typeof currentFile === "number"
+      ? directoryImages[currentFile - 1].name
+      : "Could not get name";
 
   return (
     <CarouselContainer>
@@ -151,13 +227,23 @@ const Carousel: React.FC<{
           >
             <BsFolderFill />
           </button>
-          <div>{directoryContents[0].name}</div>
+          <div>{name}</div>
           <button>
             <BsDownload />
           </button>
         </CarouselHeader>
         <CarouselFooter>
-          Some stuff goes here
+          <FooterInput
+            type="number"
+            step="1"
+            pattern="[0-9]+"
+            value={currentFile}
+            onBlur={onBlurFooterInput}
+            onInput={onInputFooterInput}
+            onChange={onChangeFooterInput}
+            hasError={inputError}
+          />
+          <TotalDisplay>/ {directoryImages.length}</TotalDisplay>
         </CarouselFooter>
       </Overlay>
       <ImageContainer
@@ -165,11 +251,7 @@ const Carousel: React.FC<{
           setControlsVisible(!controlsVisible);
         }}
       >
-        {imageData ? (
-          <img src={imageData} alt={directoryContents[0].name} />
-        ) : (
-          "No image loaded..."
-        )}
+        {imageData ? <img src={imageData} alt={name} /> : "No image loaded..."}
       </ImageContainer>
     </CarouselContainer>
   );

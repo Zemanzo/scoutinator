@@ -16,11 +16,17 @@ class RestUtil {
   }
 
   doApiRequest(path: string, options: RequestOptions = {}) {
+    return this.doRequest(
+      this.generateApiUrl(path, options),
+      options
+    );
+  }
+
+  generateApiUrl(path: string, options: RequestOptions = {}) {
     // const url = new URL(window.location.origin + "/api" + path);
     const url = new URL("http://localhost:3008/api" + path);
     url.search = options.qs?.toString() || "";
-
-    return this.doRequest(url.toString(), options);
+    return url.toString();
   }
 
   async getDirectory(path: string) {
@@ -35,15 +41,15 @@ class RestUtil {
     }
   }
 
-  async getImage(path: string) {
+  getImageUrl(path: string) {
     try {
-      return await this.doApiRequest("/image", {
+      return this.generateApiUrl("/image", {
         qs: new URLSearchParams({
           path: encodeURIComponent(path),
         }),
       });
     } catch (err) {
-      return { error: err };
+      return "invalidPath";
     }
   }
 }

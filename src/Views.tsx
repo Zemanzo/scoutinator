@@ -18,7 +18,6 @@ const Views: React.FC<{}> = () => {
           currentPath={currentPath}
           setCurrentPath={setCurrentPath}
           directoryContents={directoryContents}
-          setDirectoryContents={setDirectoryContents}
         />
       );
     case VIEWS.FILEBROWSER:

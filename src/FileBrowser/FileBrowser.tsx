@@ -80,7 +80,7 @@ const FileBrowser: React.FC<{
       setDirectoryContents(contents);
       setHasErrored(false);
     });
-  }, [currentPath]);
+  }, [currentPath, setDirectoryContents, setHasErrored]);
 
   return (
     <FileBrowserRoot>
