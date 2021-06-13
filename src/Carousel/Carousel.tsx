@@ -17,6 +17,9 @@ const ImageContainer = styled.div`
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   & > img {
     height: 100%;
@@ -134,7 +137,7 @@ const Carousel: React.FC<{
 
   useEffect(() => {
     // TODO: Add debounce, for when typing in the input.
-    if (typeof currentFile === "number") {
+    if (typeof currentFile === "number" && directoryImages.length > 0) {
       const firstImage = currentPath + directoryImages[currentFile - 1].name;
       setImageData(RestUtil.getImageUrl(firstImage));
     }
@@ -142,7 +145,6 @@ const Carousel: React.FC<{
 
   useEffect(() => {
     const keyDownCarousel = (event: KeyboardEvent) => {
-      console.log("WOWOOWWO");
       if (typeof currentFile === "number") {
         let newCurrentFile = 0;
         switch (event.code) {
@@ -174,8 +176,9 @@ const Carousel: React.FC<{
     };
   }, [currentFile, directoryImages.length]);
 
+
   const name =
-    typeof currentFile === "number"
+    typeof currentFile === "number" && directoryImages.length > 0
       ? directoryImages[currentFile - 1].name
       : "Could not get name";
 
