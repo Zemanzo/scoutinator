@@ -140,6 +140,40 @@ const Carousel: React.FC<{
     }
   }, [currentFile, currentPath, directoryImages, setImageData]);
 
+  useEffect(() => {
+    const keyDownCarousel = (event: KeyboardEvent) => {
+      console.log("WOWOOWWO");
+      if (typeof currentFile === "number") {
+        let newCurrentFile = 0;
+        switch (event.code) {
+          case "ArrowLeft":
+            newCurrentFile = currentFile - 1;
+            break;
+          case "ArrowRight":
+            newCurrentFile = currentFile + 1;
+            break;
+          default:
+            // Do nothing
+            return;
+        }
+        console.warn(
+          newCurrentFile,
+          newCurrentFile > 0 && newCurrentFile < directoryImages.length
+        );
+        if (newCurrentFile > 0 && newCurrentFile < directoryImages.length) {
+          setCurrentFile(newCurrentFile);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", keyDownCarousel);
+
+    // cleanup this component
+    return () => {
+      window.removeEventListener("keydown", keyDownCarousel);
+    };
+  }, [currentFile, directoryImages.length]);
+
   const name =
     typeof currentFile === "number"
       ? directoryImages[currentFile - 1].name
