@@ -60,15 +60,21 @@ const FileBrowser: React.FC<{
   setDirectoryContents: React.Dispatch<
     React.SetStateAction<DirectoryContents[]>
   >;
+  setCurrentFile: React.Dispatch<React.SetStateAction<number | "">>;
 }> = ({
   setCurrentView,
   currentPath,
   setCurrentPath,
   directoryContents,
   setDirectoryContents,
+  setCurrentFile,
 }) => {
   const [hasErrored, setHasErrored] = useState<boolean>(false);
   const [extraSpacing, setExtraSpacing] = useState<boolean>(false);
+  const setCurrentPathWithSideEffect = (path: string) => {
+    setCurrentFile(1);
+    setCurrentPath(path);
+  };
 
   useEffect(() => {
     RestUtil.getDirectory(currentPath).then((contents) => {
@@ -77,7 +83,14 @@ const FileBrowser: React.FC<{
         console.error(contents.error);
         return;
       }
-      setDirectoryContents(contents);
+      let imageIndex = 0;
+      const indexedContents = contents.map((entry: DirectoryContents) => {
+        if (entry.type === "image") {
+          entry.imageIndex = imageIndex++;
+        }
+        return entry;
+      });
+      setDirectoryContents(indexedContents);
       setHasErrored(false);
     });
   }, [currentPath, setDirectoryContents, setHasErrored]);
@@ -87,7 +100,7 @@ const FileBrowser: React.FC<{
       <HeaderNode>
         <BreadCrumbs
           currentPath={currentPath}
-          setCurrentPath={setCurrentPath}
+          setCurrentPath={setCurrentPathWithSideEffect}
         />
       </HeaderNode>
       <DirectoryEntriesNode thicc={extraSpacing}>
@@ -98,8 +111,11 @@ const FileBrowser: React.FC<{
             <DirectoryEntry
               name={entry.name}
               type={entry.type}
+              imageIndex={entry.imageIndex}
               currentPath={currentPath}
-              setCurrentPath={setCurrentPath}
+              setCurrentPath={setCurrentPathWithSideEffect}
+              setCurrentFile={setCurrentFile}
+              setCurrentView={setCurrentView}
               thicc={extraSpacing}
               key={entry.name}
             />

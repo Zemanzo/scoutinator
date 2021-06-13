@@ -43,12 +43,9 @@ const BreadCrumb = styled.div`
 
 const BreadCrumbs: React.FC<{
   currentPath: string;
-  setCurrentPath: Function
-}> = ({
-  currentPath,
-  setCurrentPath,
-}) => {
-  const [,...breadCrumbs] = currentPath.split("/");
+  setCurrentPath: (path: string) => void;
+}> = ({ currentPath, setCurrentPath }) => {
+  const [, ...breadCrumbs] = currentPath.split("/");
   breadCrumbs.pop();
   const setPath = (path: string = "") => {
     path = "/" + path;
@@ -61,7 +58,9 @@ const BreadCrumbs: React.FC<{
   const containerRef = useRef<HTMLDivElement>(null);
   const updateScrollAndOverflow = () => {
     if (containerRef.current !== null) {
-      setIsOverflowing(containerRef.current.scrollWidth > containerRef.current.clientWidth);
+      setIsOverflowing(
+        containerRef.current.scrollWidth > containerRef.current.clientWidth
+      );
       containerRef.current.scrollLeft = containerRef.current.scrollWidth;
       return;
     }
@@ -70,11 +69,11 @@ const BreadCrumbs: React.FC<{
   useEffect(updateScrollAndOverflow, [breadCrumbs, setIsOverflowing]);
 
   useEffect(() => {
-     window.addEventListener("resize", updateScrollAndOverflow);
-     return () => {
-       window.removeEventListener("resize", updateScrollAndOverflow);
-     };
-   }, []);
+    window.addEventListener("resize", updateScrollAndOverflow);
+    return () => {
+      window.removeEventListener("resize", updateScrollAndOverflow);
+    };
+  }, []);
 
   return (
     <BreadCrumbsNode ref={containerRef} isOverflowing={isOverflowing}>

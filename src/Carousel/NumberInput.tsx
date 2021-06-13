@@ -7,7 +7,8 @@ const NumberInputNode = styled.input`
   appearance: textfield;
   border: none;
   border-bottom: 2px solid #fff2;
-  margin: 0.7em 0.2em;
+  margin-left: 0.2em;
+  margin-right: 0.2em;
   background-color: transparent;
   color: #ccc;
   font-family: monospace;
@@ -24,6 +25,10 @@ const NumberInputNode = styled.input`
     background-color: ${(props: { hasError: boolean }) =>
       props.hasError ? "#f002" : "#fff2"};
   }
+
+  ::-webkit-inner-spin-button {
+    display: none;
+  }
 `;
 
 const TotalDisplay = styled.span`
@@ -31,7 +36,6 @@ const TotalDisplay = styled.span`
   font-weight: bold;
   font-size: 1.3em;
   text-align: center;
-  margin: 0.7em 0;
   padding: 0.5em;
 `;
 

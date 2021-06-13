@@ -39,13 +39,19 @@ const CarouselHeader = styled.header`
   ${sharedOverlayProperties}
   justify-content: space-between;
 
-  > div {
+  > h1 {
+    margin: .88em 1em 0 1em;
     flex: 1;
-    display: flex;
+    line-height: 100%;
     align-items: center;
-    justify-content: center;
     font-size: 1.2em;
     font-family: "Sawarabi Gothic";
+    font-weight: normal;
+    white-space: nowrap;
+    overflow-x: hidden;
+    overflow-y: visible;
+    text-overflow: ellipsis;
+    text-align: center;
   }
 
   > button {
@@ -68,6 +74,7 @@ const CarouselHeader = styled.header`
 const CarouselFooter = styled.footer`
   ${sharedOverlayProperties}
   justify-content: center;
+  padding: .3em 0;
 
   > button {
     appearance: none;
@@ -120,7 +127,7 @@ const controlsNotVisibleStyle = css`
     transform: translate(0, calc((1.5em + (1.2em * 1.5)) * -1));
   }
   ${CarouselFooter} {
-    transform: translate(0, calc(1.3em + (2.4em * 1.3)));
+    transform: translate(0, calc(1.3em + (1.6em * 1.3)));
   }
 `;
 
@@ -128,12 +135,23 @@ const Carousel: React.FC<{
   setCurrentView: React.Dispatch<React.SetStateAction<string>>;
   currentPath: string;
   setCurrentPath: React.Dispatch<React.SetStateAction<string>>;
+  currentFile: number | "";
+  setCurrentFile: React.Dispatch<React.SetStateAction<number | "">>;
   directoryContents: DirectoryContents[];
-}> = ({ setCurrentView, currentPath, setCurrentPath, directoryContents}) => {
-  const directoryImages = directoryContents.filter(file => file.type === "image");
+  initialFile?: number;
+}> = ({
+  setCurrentView,
+  currentPath,
+  setCurrentPath,
+  currentFile,
+  setCurrentFile,
+  directoryContents,
+}) => {
+  const directoryImages = directoryContents.filter(
+    (file) => file.type === "image"
+  );
   const [controlsVisible, setControlsVisible] = useState<boolean>(true);
   const [imageData, setImageData] = useState<string>("");
-  const [currentFile, setCurrentFile] = useState<number | "">(1);
 
   useEffect(() => {
     // TODO: Add debounce, for when typing in the input.
@@ -158,10 +176,6 @@ const Carousel: React.FC<{
             // Do nothing
             return;
         }
-        console.warn(
-          newCurrentFile,
-          newCurrentFile > 0 && newCurrentFile < directoryImages.length
-        );
         if (newCurrentFile > 0 && newCurrentFile < directoryImages.length) {
           setCurrentFile(newCurrentFile);
         }
@@ -174,8 +188,7 @@ const Carousel: React.FC<{
     return () => {
       window.removeEventListener("keydown", keyDownCarousel);
     };
-  }, [currentFile, directoryImages.length]);
-
+  }, [currentFile, setCurrentFile, directoryImages.length]);
 
   const name =
     typeof currentFile === "number" && directoryImages.length > 0
@@ -193,13 +206,17 @@ const Carousel: React.FC<{
           >
             <BsFolderFill />
           </button>
-          <div>{name}</div>
+          <h1>{name}</h1>
           <button>
             <BsDownload />
           </button>
         </CarouselHeader>
         <CarouselFooter>
-          <NumberInput currentNumber={currentFile} setCurrentNumber={setCurrentFile} total={directoryImages.length} />
+          <NumberInput
+            currentNumber={currentFile}
+            setCurrentNumber={setCurrentFile}
+            total={directoryImages.length}
+          />
         </CarouselFooter>
       </Overlay>
       <ImageContainer

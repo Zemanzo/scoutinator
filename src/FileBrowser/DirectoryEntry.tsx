@@ -1,6 +1,7 @@
 import React from "react";
 import styled, { css } from "styled-components";
 import { BsFillFolderFill, BsFileEarmark, BsImageFill } from "react-icons/bs";
+import { VIEWS } from "../enum";
 
 const DirectoryEntryNode = styled.div`
   display: flex;
@@ -56,17 +57,37 @@ const ImageIcon = styled(BsImageFill)`
 const DirectoryEntry: React.FC<{
   name: string;
   type: string;
+  imageIndex?: number;
   currentPath: string;
-  setCurrentPath: React.Dispatch<React.SetStateAction<string>>;
+  setCurrentPath: (path: string) => void;
+  setCurrentFile: React.Dispatch<React.SetStateAction<number | "">>;
+  setCurrentView: React.Dispatch<React.SetStateAction<string>>;
   thicc: boolean;
-}> = ({ name, type, currentPath, setCurrentPath, thicc }) => {
+}> = ({
+  name,
+  type,
+  imageIndex,
+  currentPath,
+  setCurrentPath,
+  setCurrentFile,
+  setCurrentView,
+  thicc,
+}) => {
   return (
     <DirectoryEntryNode
       type={type}
       thicc={thicc}
       onClick={() => {
-        if (type === "folder") {
-          setCurrentPath(currentPath + name + "/");
+        switch (type) {
+          case "folder":
+            setCurrentPath(currentPath + name + "/");
+            break;
+          case "image":
+            if (imageIndex !== undefined) {
+              setCurrentFile(imageIndex + 1);
+              setCurrentView(VIEWS.CAROUSEL);
+            }
+            break;
         }
       }}
     >

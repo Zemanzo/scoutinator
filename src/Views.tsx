@@ -9,6 +9,7 @@ const Views: React.FC<{}> = () => {
   const [currentView, setCurrentView] = useState<string>(VIEWS.FILEBROWSER);
   const [currentPath, setCurrentPath] = useState<string>("/");
   const [directoryContents, setDirectoryContents] = useState<DirectoryContents[]>([]);
+  const [currentFile, setCurrentFile] = useState<number | "">(1);
 
   switch (currentView) {
     case VIEWS.CAROUSEL:
@@ -18,6 +19,8 @@ const Views: React.FC<{}> = () => {
           currentPath={currentPath}
           setCurrentPath={setCurrentPath}
           directoryContents={directoryContents}
+          currentFile={currentFile}
+          setCurrentFile={setCurrentFile}
         />
       );
     case VIEWS.FILEBROWSER:
@@ -29,6 +32,7 @@ const Views: React.FC<{}> = () => {
           setCurrentPath={setCurrentPath}
           directoryContents={directoryContents}
           setDirectoryContents={setDirectoryContents}
+          setCurrentFile={setCurrentFile}
         />
       );
   }
