@@ -76,7 +76,7 @@ const NumberInput: React.FC<{
   };
 
   return (
-    <>
+    <div>
       <NumberInputNode
         type="number"
         step="1"
@@ -88,7 +88,7 @@ const NumberInput: React.FC<{
         hasError={inputError}
       />
       <TotalDisplay>/ {total}</TotalDisplay>
-    </>
+    </div>
   );
 };
 

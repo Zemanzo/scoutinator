@@ -1,10 +1,14 @@
 import React, {useState, useEffect} from "react";
 import styled, {css} from "styled-components";
 import { BsDownload, BsFolderFill } from "react-icons/bs";
+import prettyBytes from "pretty-bytes";
+
 import { VIEWS } from "../enum";
 import { DirectoryContents } from "../scoutinator"
 import RestUtil from "../RestUtil";
+import Loader from "./Loader";
 import NumberInput from "./NumberInput";
+import { useRef } from "react";
 
 const CarouselContainer = styled.div`
   height: 100vh;
@@ -25,6 +29,7 @@ const ImageContainer = styled.div`
     height: 100%;
     width: 100%;
     object-fit: contain;
+    opacity: ${(props: { isLoading: boolean }) => props.isLoading ? ".1" : "1"};
   }
 `;
 
@@ -33,6 +38,7 @@ const sharedOverlayProperties = css`
   backdrop-filter: blur(25px);
   transition: transform 0.22s ease;
   display: flex;
+  pointer-events: auto;
 `;
 
 const CarouselHeader = styled.header`
@@ -73,7 +79,7 @@ const CarouselHeader = styled.header`
 
 const CarouselFooter = styled.footer`
   ${sharedOverlayProperties}
-  justify-content: center;
+  justify-content: space-between;
   padding: .3em 0;
 
   > button {
@@ -93,6 +99,22 @@ const CarouselFooter = styled.footer`
   }
 `;
 
+const ImageAttributes = styled.div`
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #888;
+  text-shadow: #0009 1px 1px 1px;
+  display: flex;
+  align-items: center;
+
+  > span {
+    margin-right: 0.5em;
+    padding: 0.2em 0.4em;
+    background-color: #fff1;
+    border-radius: 5px;
+  }
+`;
+
 const Overlay = styled.div`
   position: absolute;
   left: 0px;
@@ -104,10 +126,7 @@ const Overlay = styled.div`
   flex-direction: column;
   justify-content: space-between;
   pointer-events: none;
-
-  & > * {
-    pointer-events: auto;
-  }
+  z-index: 2;
 
   ${(props: { controlsVisible: boolean }) =>
     props.controlsVisible ? controlsVisibleStyle : controlsNotVisibleStyle};
@@ -151,15 +170,42 @@ const Carousel: React.FC<{
     (file) => file.type === "image"
   );
   const [controlsVisible, setControlsVisible] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [imageData, setImageData] = useState<string>("");
+  const imageElement = useRef<HTMLImageElement>(null);
+  const [imagePerformanceAttributes, setImagePerformanceAttributes] =
+    useState<false | PerformanceResourceTiming>(false);
+  const _getImageLoadedState = () => {
+    return imageElement.current !== null && !(
+      imageElement.current.complete && imageElement.current.naturalHeight !== 0
+    );
+  }
 
   useEffect(() => {
     // TODO: Add debounce, for when typing in the input.
-    if (typeof currentFile === "number" && directoryImages.length > 0) {
+    if (
+      typeof currentFile === "number" &&
+      directoryImages.length > 0
+    ) {
+      console.log("getting image!");
+
+      let loadIconDelay;
+      if (_getImageLoadedState()) {
+        loadIconDelay = setTimeout(() => {
+          setIsLoading(_getImageLoadedState());
+        }, 300);
+      } else {
+        clearTimeout(loadIconDelay);
+        setIsLoading(_getImageLoadedState());
+      }
       const firstImage = currentPath + directoryImages[currentFile - 1].name;
       setImageData(RestUtil.getImageUrl(firstImage));
     }
   }, [currentFile, currentPath, directoryImages, setImageData]);
+
+  useEffect(() => {
+
+  }, [imageData, setImagePerformanceAttributes]);
 
   useEffect(() => {
     const keyDownCarousel = (event: KeyboardEvent) => {
@@ -195,6 +241,24 @@ const Carousel: React.FC<{
       ? directoryImages[currentFile - 1].name
       : "Could not get name";
 
+  const onImageLoad = () => {
+    console.log("done loading!");
+    setIsLoading(false);
+    setImagePerformanceAttributes(
+      imageElement.current !== null &&
+        imageElement.current.src !== "" &&
+        (window.performance.getEntriesByName(
+          imageElement.current.src,
+          "resource"
+        )[0] as PerformanceResourceTiming)
+    );
+  }
+
+  const prettyBytesSettings = {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  };
+
   return (
     <CarouselContainer>
       <Overlay controlsVisible={controlsVisible}>
@@ -217,14 +281,37 @@ const Carousel: React.FC<{
             setCurrentNumber={setCurrentFile}
             total={directoryImages.length}
           />
+          {imagePerformanceAttributes && (
+            <ImageAttributes>
+              <span title="HTTP transfer file size">
+                {prettyBytes(
+                  imagePerformanceAttributes.transferSize,
+                  prettyBytesSettings
+                )}
+              </span>
+              <span title="Decoded (actual) file size">
+                {prettyBytes(
+                  imagePerformanceAttributes.decodedBodySize,
+                  prettyBytesSettings
+                )}
+              </span>
+            </ImageAttributes>
+          )}
         </CarouselFooter>
+        <Loader isLoading={isLoading} />
       </Overlay>
       <ImageContainer
+        isLoading={isLoading}
         onClick={() => {
           setControlsVisible(!controlsVisible);
         }}
       >
-        {imageData ? <img src={imageData} alt={name} /> : "No image loaded..."}
+        <img
+          src={imageData}
+          ref={imageElement}
+          alt={imageData ? name : "No image loaded..."}
+          onLoad={onImageLoad}
+        />
       </ImageContainer>
     </CarouselContainer>
   );
