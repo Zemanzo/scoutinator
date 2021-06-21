@@ -1,3 +1,5 @@
+import config from "./config";
+
 interface RequestOptions extends RequestInit {
   qs?: URLSearchParams;
 }
@@ -23,8 +25,7 @@ class RestUtil {
   }
 
   generateApiUrl(path: string, options: RequestOptions = {}) {
-    // const url = new URL(window.location.origin + "/api" + path);
-    const url = new URL("http://localhost:3008/api" + path);
+    const url = new URL(config.API_ENDPOINT + path);
     url.search = options.qs?.toString() || "";
     return url.toString();
   }
