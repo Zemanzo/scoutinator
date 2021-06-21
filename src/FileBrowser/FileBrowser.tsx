@@ -9,7 +9,7 @@ import {
 import DirectoryEntry from "./DirectoryEntry";
 import BreadCrumbs from "./BreadCrumbs/BreadCrumbs";
 import RestUtil from "../RestUtil";
-import { VIEWS } from "../enum";
+import { VIEWS, SETTINGS } from "../enum";
 import { DirectoryContents } from "../scoutinator";
 
 const FileBrowserRoot = styled.div`
@@ -70,7 +70,14 @@ const FileBrowser: React.FC<{
   setCurrentFile,
 }) => {
   const [hasErrored, setHasErrored] = useState<boolean>(false);
-  const [extraSpacing, setExtraSpacing] = useState<boolean>(false);
+  const [extraSpacing, setExtraSpacing] = useState<boolean>(
+    localStorage.getItem(SETTINGS.SPACING) === "true"
+  );
+  const setExtraSpacingWithSideEffect = () => {
+    const newSpacing = !extraSpacing;
+    setExtraSpacing(newSpacing);
+    localStorage.setItem(SETTINGS.SPACING, String(newSpacing));
+  };
   const setCurrentPathWithSideEffect = (path: string) => {
     setCurrentFile(1);
     setCurrentPath(path);
@@ -125,11 +132,7 @@ const FileBrowser: React.FC<{
         )}
       </DirectoryEntriesNode>
       <FooterNode>
-        <button
-          onClick={() => {
-            setExtraSpacing(!extraSpacing);
-          }}
-        >
+        <button onClick={setExtraSpacingWithSideEffect}>
           {extraSpacing ? <BsArrowsCollapse /> : <BsArrowsExpand />}
         </button>
         <button>
