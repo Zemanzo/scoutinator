@@ -1,14 +1,15 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import styled, {css} from "styled-components";
 import { BsDownload, BsFolderFill } from "react-icons/bs";
 import prettyBytes from "pretty-bytes";
+import { useSwipeable } from "react-swipeable";
 
-import { VIEWS } from "../enum";
+import { VIEWS, CAROUSEL_IMAGE_POSITION } from "../enum";
 import { DirectoryContents } from "../scoutinator"
 import RestUtil from "../RestUtil";
 import Loader from "./Loader";
 import NumberInput from "./NumberInput";
-import { useRef } from "react";
+
 
 const CarouselContainer = styled.div`
   height: 100vh;
@@ -21,16 +22,29 @@ const ImageContainer = styled.div`
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+`;
 
-  & > img {
-    height: 100%;
-    width: 100%;
-    object-fit: contain;
-    opacity: ${(props: { isLoading: boolean }) => props.isLoading ? ".1" : "1"};
-  }
+const CarouselImage = styled.img`
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  opacity: ${(props: { isLoading: boolean; position: string }) =>
+    props.isLoading ? ".1" : "1"};
+  ${(props: { isLoading: boolean; position: string}) => {
+    switch (props.position) {
+      case CAROUSEL_IMAGE_POSITION.BEFORE:
+        return css`
+          transform: translateX(-100%);
+        `;
+      case CAROUSEL_IMAGE_POSITION.VISIBLE:
+        return "";
+      case CAROUSEL_IMAGE_POSITION.AFTER:
+        return css`
+          transform: translateX(100%);
+        `;
+    }
+  }}
 `;
 
 const sharedOverlayProperties = css`
@@ -171,13 +185,19 @@ const Carousel: React.FC<{
   );
   const [controlsVisible, setControlsVisible] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [imageData, setImageData] = useState<string>("");
-  const imageElement = useRef<HTMLImageElement>(null);
+  const [imageBeforeData, setImageBeforeData] = useState<string>("");
+  const [imageMiddleData, setImageMiddleData] = useState<string>("");
+  const [imageAfterData, setImageAfterData] = useState<string>("");
+  const [nextOrPrevious, setNextOrPrevious] = useState<number>(0);
+  const imageElementBefore = useRef<HTMLImageElement | null>(null);
+  const imageElementMiddle = useRef<HTMLImageElement | null>(null);
+  const imageElementAfter = useRef<HTMLImageElement | null>(null);
   const [imagePerformanceAttributes, setImagePerformanceAttributes] =
     useState<false | PerformanceResourceTiming>(false);
+
   const _getImageLoadedState = () => {
-    return imageElement.current !== null && !(
-      imageElement.current.complete && imageElement.current.naturalHeight !== 0
+    return imageElementMiddle.current !== null && !(
+      imageElementMiddle.current.complete && imageElementMiddle.current.naturalHeight !== 0
     );
   }
 
@@ -198,14 +218,114 @@ const Carousel: React.FC<{
         clearTimeout(loadIconDelay);
         setIsLoading(_getImageLoadedState());
       }
-      const firstImage = currentPath + directoryImages[currentFile - 1].name;
-      setImageData(RestUtil.getImageUrl(firstImage));
+      const middleImageUrl = currentPath + directoryImages[currentFile - 1].name;
+      const beforeImageUrl =
+        currentFile > 1 ? currentPath + directoryImages[currentFile - 2].name : "";
+      const afterImageUrl = currentFile < directoryImages.length ? currentPath + directoryImages[currentFile].name : "";
+      setImageMiddleData(RestUtil.getImageUrl(middleImageUrl));
+      setImageBeforeData(RestUtil.getImageUrl(beforeImageUrl));
+      setImageAfterData(RestUtil.getImageUrl(afterImageUrl));
     }
-  }, [currentFile, currentPath, directoryImages, setImageData]);
+  }, [currentFile, currentPath, directoryImages, setImageMiddleData]);
+
+
+  const setCurrentFileClamped = useCallback(
+    (newNumber: number) => {
+      console.log(newNumber);
+      if (newNumber > 0 && newNumber < directoryImages.length) {
+        setCurrentFile(newNumber);
+      }
+    },
+    [setCurrentFile, directoryImages.length]
+  );
 
   useEffect(() => {
+    if (imageElementMiddle.current !== null && typeof currentFile === "number") {
+      const onTransitionEnd = () => {
+        console.log("transitionEnded", nextOrPrevious);
+        if (nextOrPrevious === -1) {
+          setCurrentFileClamped(currentFile + 1);
+        } else if (nextOrPrevious === 1) {
+          setCurrentFileClamped(currentFile - 1);
+        }
+        setNextOrPrevious(0);
+      };
+      imageElementMiddle.current.addEventListener("transitionend", onTransitionEnd);
+      return () => {
+        if (imageElementMiddle.current !== null) {
+          imageElementMiddle.current.removeEventListener(
+            "transitionend",
+            onTransitionEnd
+          );
+        }
+      };
+    }
+  }, [imageElementMiddle, nextOrPrevious, currentFile, setCurrentFileClamped]);
 
-  }, [imageData, setImagePerformanceAttributes]);
+  const handlers = useSwipeable({
+    onSwipeStart: (eventData) => {
+      if (
+        imageElementMiddle.current !== null &&
+        imageElementBefore.current !== null &&
+        imageElementAfter.current !== null
+      ) {
+        imageElementMiddle.current.style.transition = "";
+        imageElementBefore.current.style.transition = "";
+        imageElementAfter.current.style.transition = "";
+      }
+    },
+    onSwiping: (eventData) => {
+      if (
+        imageElementMiddle.current !== null &&
+        imageElementBefore.current !== null &&
+        imageElementAfter.current !== null
+      ) {
+        imageElementMiddle.current.style.transform = `translateX(${eventData.deltaX}px)`;
+        imageElementBefore.current.style.transform = `translateX(calc(-100% + ${eventData.deltaX}px))`;
+        imageElementAfter.current.style.transform = `translateX(calc(100% + ${eventData.deltaX}px))`;
+      }
+    },
+    onSwiped: (eventData) => {
+      console.log("done swiping!");
+      if (
+        imageElementMiddle.current !== null &&
+        imageElementBefore.current !== null &&
+        imageElementAfter.current !== null
+      ) {
+        let translation = 0;
+        switch (eventData.dir) {
+          case "Left":
+            translation = -window.innerWidth;
+            setNextOrPrevious(-1);
+            break;
+          case "Right":
+            translation = window.innerWidth;
+            setNextOrPrevious(1);
+            break;
+        }
+
+        imageElementMiddle.current.style.transition = "transform .2s ease-out";
+        imageElementBefore.current.style.transition = "transform .2s ease-out";
+        imageElementAfter.current.style.transition = "transform .2s ease-out";
+        setTimeout(function () {
+          if (
+            imageElementMiddle.current !== null &&
+            imageElementBefore.current !== null &&
+            imageElementAfter.current !== null
+          ) {
+            imageElementMiddle.current.style.transform = `translateX(${translation}px)`;
+            imageElementBefore.current.style.transform = `translateX(calc(-100% + ${translation}px))`;
+            imageElementAfter.current.style.transform = `translateX(calc(100% + ${translation}px))`;
+          }
+        }, 1);
+      }
+    }
+  });
+
+  const refPassthrough = (refElement: HTMLImageElement) => {
+    handlers.ref(refElement);
+    imageElementMiddle.current = refElement;
+  };
 
   useEffect(() => {
     const keyDownCarousel = (event: KeyboardEvent) => {
@@ -222,9 +342,7 @@ const Carousel: React.FC<{
             // Do nothing
             return;
         }
-        if (newCurrentFile > 0 && newCurrentFile < directoryImages.length) {
-          setCurrentFile(newCurrentFile);
-        }
+        setCurrentFileClamped(newCurrentFile);
       }
     };
 
@@ -234,7 +352,7 @@ const Carousel: React.FC<{
     return () => {
       window.removeEventListener("keydown", keyDownCarousel);
     };
-  }, [currentFile, setCurrentFile, directoryImages.length]);
+  }, [currentFile, setCurrentFileClamped]);
 
   const name =
     typeof currentFile === "number" && directoryImages.length > 0
@@ -244,11 +362,23 @@ const Carousel: React.FC<{
   const onImageLoad = () => {
     console.log("done loading!");
     setIsLoading(false);
+    if (
+      imageElementMiddle.current !== null &&
+      imageElementBefore.current !== null &&
+      imageElementAfter.current !== null
+    ) {
+      imageElementMiddle.current.style.transition = "";
+      imageElementMiddle.current.style.transform = "";
+      imageElementBefore.current.style.transition = "";
+      imageElementBefore.current.style.transform = "translateX(-100%)";
+      imageElementAfter.current.style.transition = "";
+      imageElementAfter.current.style.transform = "translateX(100%)";
+    }
     setImagePerformanceAttributes(
-      imageElement.current !== null &&
-        imageElement.current.src !== "" &&
+      imageElementMiddle.current !== null &&
+        imageElementMiddle.current.src !== "" &&
         (window.performance.getEntriesByName(
-          imageElement.current.src,
+          imageElementMiddle.current.src,
           "resource"
         )[0] as PerformanceResourceTiming)
     );
@@ -301,16 +431,34 @@ const Carousel: React.FC<{
         <Loader isLoading={isLoading} />
       </Overlay>
       <ImageContainer
-        isLoading={isLoading}
         onClick={() => {
           setControlsVisible(!controlsVisible);
         }}
       >
-        <img
-          src={imageData}
-          ref={imageElement}
-          alt={imageData ? name : "No image loaded..."}
+        <CarouselImage
+          src={imageBeforeData}
+          ref={imageElementBefore}
+          alt={imageBeforeData ? name : "No image loaded..."}
           onLoad={onImageLoad}
+          isLoading={isLoading}
+          position={CAROUSEL_IMAGE_POSITION.BEFORE}
+        />
+        <CarouselImage
+          src={imageMiddleData}
+          alt={imageMiddleData ? name : "No image loaded..."}
+          onLoad={onImageLoad}
+          isLoading={isLoading}
+          position={CAROUSEL_IMAGE_POSITION.VISIBLE}
+          {...handlers}
+          ref={refPassthrough}
+        />
+        <CarouselImage
+          src={imageAfterData}
+          ref={imageElementAfter}
+          alt={imageAfterData ? name : "No image loaded..."}
+          onLoad={onImageLoad}
+          isLoading={isLoading}
+          position={CAROUSEL_IMAGE_POSITION.AFTER}
         />
       </ImageContainer>
     </CarouselContainer>
